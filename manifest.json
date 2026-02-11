@@ -1,0 +1,16 @@
+{
+    "name": "OutSystems Theme Bridge",
+    "id": "YOUR_ID_HERE",
+    "api": "1.0.0",
+    "main": "code.ts",
+    "ui": "ui.html",
+    "capabilities": [],
+    "enableProposedApi": false,
+    "editorType": [
+        "figma"
+    ],
+    "permissions": [
+        "variables",
+        "styles"
+    ]
+}
