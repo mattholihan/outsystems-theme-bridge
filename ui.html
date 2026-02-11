@@ -1,0 +1,529 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <style>
+        /* ── Reset & Base ────────────────────────────────────────────── */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html,
+        body {
+            font-family: Inter, 'Helvetica Neue', Helvetica, Arial, sans-serif;
+            font-size: 11px;
+            color: var(--figma-color-text);
+            background: var(--figma-color-bg);
+            line-height: 1.5;
+            overflow-x: hidden;
+        }
+
+        /* ── Layout ──────────────────────────────────────────────────── */
+        .container {
+            padding: 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .header {
+            padding-bottom: 8px;
+            border-bottom: 1px solid var(--figma-color-border);
+        }
+
+        .header h1 {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--figma-color-text-emphasis);
+            letter-spacing: -0.2px;
+        }
+
+        .header p {
+            font-size: 11px;
+            color: var(--figma-color-text-secondary);
+            margin-top: 2px;
+        }
+
+        /* ── Form Controls ───────────────────────────────────────────── */
+        label {
+            display: block;
+            font-size: 11px;
+            font-weight: 500;
+            color: var(--figma-color-text-secondary);
+            margin-bottom: 4px;
+        }
+
+        select {
+            width: 100%;
+            padding: 6px 8px;
+            font-size: 11px;
+            font-family: Inter, sans-serif;
+            color: var(--figma-color-text);
+            background: var(--figma-color-bg-secondary);
+            border: 1px solid var(--figma-color-border);
+            border-radius: 6px;
+            outline: none;
+            cursor: pointer;
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%23999' stroke-width='1.5' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 8px center;
+        }
+
+        select:focus {
+            border-color: var(--figma-color-bg-brand);
+        }
+
+        .row {
+            display: flex;
+            gap: 8px;
+        }
+
+        .row .field {
+            flex: 1;
+        }
+
+        /* ── Options ─────────────────────────────────────────────────── */
+        .options-bar {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            padding: 8px 0;
+            border-top: 1px solid var(--figma-color-border);
+            border-bottom: 1px solid var(--figma-color-border);
+            flex-wrap: wrap;
+        }
+
+        .option-group {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .option-group span {
+            font-weight: 500;
+            color: var(--figma-color-text-secondary);
+            margin-right: 2px;
+        }
+
+        .radio-label,
+        .check-label {
+            display: flex;
+            align-items: center;
+            gap: 3px;
+            cursor: pointer;
+            color: var(--figma-color-text);
+            font-size: 11px;
+        }
+
+        input[type="radio"],
+        input[type="checkbox"] {
+            width: 12px;
+            height: 12px;
+            accent-color: var(--figma-color-bg-brand);
+            cursor: pointer;
+            margin: 0;
+        }
+
+        /* ── Section Label ───────────────────────────────────────────── */
+        .section-label {
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--figma-color-text-emphasis);
+            margin-top: 2px;
+        }
+
+        /* ── Code Preview ────────────────────────────────────────────── */
+        .code-wrap {
+            position: relative;
+            border-radius: 6px;
+            overflow: hidden;
+            border: 1px solid var(--figma-color-border);
+        }
+
+        .code-block {
+            background: var(--figma-color-bg-secondary);
+            padding: 10px 12px;
+            font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', 'Consolas', monospace;
+            font-size: 10.5px;
+            line-height: 1.6;
+            color: var(--figma-color-text);
+            white-space: pre;
+            overflow: auto;
+            max-height: 220px;
+            tab-size: 2;
+        }
+
+        .code-block .comment {
+            color: var(--figma-color-text-secondary);
+        }
+
+        .code-block .prop {
+            color: var(--figma-color-text-brand);
+        }
+
+        .code-block .value {
+            color: var(--figma-color-text-emphasis);
+        }
+
+        .empty-state {
+            padding: 32px 12px;
+            text-align: center;
+            color: var(--figma-color-text-secondary);
+            font-style: italic;
+        }
+
+        /* ── Action Bar ──────────────────────────────────────────────── */
+        .action-bar {
+            display: flex;
+            gap: 8px;
+        }
+
+        .btn-copy {
+            flex: 1;
+            padding: 8px 0;
+            font-size: 11px;
+            font-weight: 600;
+            font-family: Inter, sans-serif;
+            color: #fff;
+            background: var(--figma-color-bg-brand);
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: opacity 0.15s;
+        }
+
+        .btn-copy:hover {
+            opacity: 0.9;
+        }
+
+        .btn-copy:active {
+            opacity: 0.8;
+        }
+
+        .btn-copy.copied {
+            background: #1bc47d;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <h1>OutSystems Theme Bridge</h1>
+            <p>Export Figma variables &amp; text styles as OutSystems CSS custom properties.</p>
+        </div>
+
+        <!-- Selectors Row -->
+        <div class="row">
+            <div class="field">
+                <label for="collectionSelect">Collection</label>
+                <select id="collectionSelect">
+                    <option value="">Loading…</option>
+                </select>
+            </div>
+            <div class="field">
+                <label for="modeSelect">Mode</label>
+                <select id="modeSelect">
+                    <option value="">—</option>
+                </select>
+            </div>
+        </div>
+
+        <!-- Options -->
+        <div class="options-bar">
+            <div class="option-group">
+                <span>Wrapper</span>
+                <label class="radio-label"><input type="radio" name="wrapper" value=":root" checked> :root</label>
+                <label class="radio-label"><input type="radio" name="wrapper" value=".theme-custom">
+                    .theme-custom</label>
+            </div>
+            <div class="option-group">
+                <label class="check-label"><input type="checkbox" id="prependCheck" checked> Add comment header</label>
+            </div>
+        </div>
+
+        <!-- Variables Preview -->
+        <div class="section-label">Variables</div>
+        <div class="code-wrap">
+            <div class="code-block" id="variablesPreview">
+                <span class="empty-state">Select a collection to preview CSS.</span>
+            </div>
+        </div>
+
+        <!-- Typography Preview -->
+        <div class="section-label">Typography</div>
+        <div class="code-wrap">
+            <div class="code-block" id="typographyPreview">
+                <span class="empty-state">Text styles will appear here.</span>
+            </div>
+        </div>
+
+        <!-- Actions -->
+        <div class="action-bar">
+            <button class="btn-copy" id="btnCopyVars">Copy Variables CSS</button>
+            <button class="btn-copy" id="btnCopyTypo">Copy Typography CSS</button>
+        </div>
+    </div>
+
+    <script>
+        // ── Formatter functions (inlined from formatters.ts) ──────────────
+
+        function toOsVarName(figmaName) {
+            return '--os-' + figmaName
+                .replace(/\//g, '-')
+                .replace(/\s+/g, '-')
+                .replace(/[^a-zA-Z0-9-]/g, '')
+                .toLowerCase();
+        }
+
+        function clamp(n) {
+            return Math.max(0, Math.min(255, Math.round(n * 255)));
+        }
+
+        function rgbToHex(r, g, b) {
+            const toHex = (v) => clamp(v).toString(16).padStart(2, '0');
+            return '#' + toHex(r) + toHex(g) + toHex(b);
+        }
+
+        function formatColor(color) {
+            if (color.a === undefined || color.a >= 1) {
+                return rgbToHex(color.r, color.g, color.b);
+            }
+            return 'rgba(' + clamp(color.r) + ', ' + clamp(color.g) + ', ' + clamp(color.b) + ', ' + parseFloat(color.a.toFixed(2)) + ')';
+        }
+
+        function fontStyleToWeight(style) {
+            const s = style.toLowerCase();
+            if (s.includes('thin') || s.includes('hairline')) return 100;
+            if (s.includes('extralight') || s.includes('ultra light')) return 200;
+            if (s.includes('light')) return 300;
+            if (s.includes('medium')) return 500;
+            if (s.includes('semibold') || s.includes('semi bold') || s.includes('demi bold')) return 600;
+            if (s.includes('extrabold') || s.includes('ultra bold') || s.includes('extra bold')) return 800;
+            if (s.includes('bold')) return 700;
+            if (s.includes('black') || s.includes('heavy')) return 900;
+            return 400;
+        }
+
+        // ── State ─────────────────────────────────────────────────────────
+        let pluginData = null;
+
+        const collectionSelect = document.getElementById('collectionSelect');
+        const modeSelect = document.getElementById('modeSelect');
+        const variablesPreview = document.getElementById('variablesPreview');
+        const typographyPreview = document.getElementById('typographyPreview');
+        const btnCopyVars = document.getElementById('btnCopyVars');
+        const btnCopyTypo = document.getElementById('btnCopyTypo');
+        const prependCheck = document.getElementById('prependCheck');
+
+        function getOptions() {
+            const wrapper = document.querySelector('input[name="wrapper"]:checked').value;
+            const prependComment = prependCheck.checked;
+            const col = getSelectedCollection();
+            const mode = getSelectedMode();
+            return {
+                wrapper,
+                prependComment,
+                collectionName: col ? col.name : '',
+                modeName: mode ? mode.name : '',
+            };
+        }
+
+        function getSelectedCollection() {
+            if (!pluginData) return null;
+            const id = collectionSelect.value;
+            return pluginData.collections.find((c) => c.id === id) || null;
+        }
+
+        function getSelectedMode() {
+            const col = getSelectedCollection();
+            if (!col) return null;
+            const modeId = modeSelect.value;
+            return col.modes.find((m) => m.modeId === modeId) || null;
+        }
+
+        // ── CSS Generation (mirrors formatters.ts) ────────────────────────
+
+        function generateVariableCSS(variables, modeId, options) {
+            const lines = [];
+            if (options.prependComment) {
+                lines.push('/* Generated from Figma Design System \u2014 ' + options.collectionName + ' (' + options.modeName + ') */');
+            }
+            lines.push(options.wrapper + ' {');
+
+            const colors = variables.filter((v) => v.resolvedType === 'COLOR');
+            const numbers = variables.filter((v) => v.resolvedType === 'FLOAT');
+
+            if (colors.length > 0) {
+                lines.push('  /* \u2500\u2500 Colors \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500 */');
+                for (const v of colors) {
+                    const value = v.valuesByMode[modeId];
+                    if (value && typeof value === 'object' && 'r' in value) {
+                        lines.push('  ' + toOsVarName(v.name) + ': ' + formatColor(value) + ';');
+                    }
+                }
+            }
+            if (numbers.length > 0) {
+                if (colors.length > 0) lines.push('');
+                lines.push('  /* \u2500\u2500 Numbers \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500 */');
+                for (const v of numbers) {
+                    const value = v.valuesByMode[modeId];
+                    if (value !== undefined && value !== null) {
+                        lines.push('  ' + toOsVarName(v.name) + ': ' + value + ';');
+                    }
+                }
+            }
+            lines.push('}');
+            return lines.join('\n');
+        }
+
+        function generateTypographyCSS(textStyles, options) {
+            if (textStyles.length === 0) return '';
+            const lines = [];
+            if (options.prependComment) {
+                lines.push('/* Generated from Figma Design System \u2014 Typography */');
+            }
+            lines.push(options.wrapper + ' {');
+            lines.push('  /* \u2500\u2500 Typography \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500 */');
+
+            for (let i = 0; i < textStyles.length; i++) {
+                const s = textStyles[i];
+                const base = toOsVarName('font/' + s.name);
+                const weight = fontStyleToWeight(s.fontStyle);
+                let lhValue = typeof s.lineHeight === 'number' ? s.lineHeight + 'px'
+                    : (s.lineHeight === 'normal' || s.lineHeight === 'AUTO') ? 'normal'
+                        : s.lineHeight;
+
+                lines.push('  ' + base + '-family: \'' + s.fontFamily + '\';');
+                lines.push('  ' + base + '-weight: ' + weight + ';');
+                lines.push('  ' + base + '-size: ' + s.fontSize + 'px;');
+                lines.push('  ' + base + '-line-height: ' + lhValue + ';');
+                if (i < textStyles.length - 1) lines.push('');
+            }
+            lines.push('}');
+            return lines.join('\n');
+        }
+
+        // ── Syntax Highlighting (simple) ──────────────────────────────────
+        function highlightCSS(css) {
+            return css
+                .replace(/\/\*.*?\*\//g, (m) => '<span class="comment">' + m + '</span>')
+                .replace(/(--os-[a-z0-9-]+)/g, '<span class="prop">$1</span>')
+                .replace(/:\s*([^;]+);/g, (m, val) => ': <span class="value">' + val + '</span>;');
+        }
+
+        // ── Render ────────────────────────────────────────────────────────
+        let lastVarCSS = '';
+        let lastTypoCSS = '';
+
+        function render() {
+            const col = getSelectedCollection();
+            const mode = getSelectedMode();
+
+            if (!col || !mode) {
+                variablesPreview.innerHTML = '<span class="empty-state">Select a collection to preview CSS.</span>';
+                lastVarCSS = '';
+                return;
+            }
+
+            const options = getOptions();
+
+            // Variables
+            if (col.variables.length > 0) {
+                lastVarCSS = generateVariableCSS(col.variables, mode.modeId, options);
+                variablesPreview.innerHTML = highlightCSS(escapeHtml(lastVarCSS));
+            } else {
+                variablesPreview.innerHTML = '<span class="empty-state">No color or number variables in this collection.</span>';
+                lastVarCSS = '';
+            }
+
+            // Typography
+            if (pluginData.textStyles.length > 0) {
+                lastTypoCSS = generateTypographyCSS(pluginData.textStyles, options);
+                typographyPreview.innerHTML = highlightCSS(escapeHtml(lastTypoCSS));
+            } else {
+                typographyPreview.innerHTML = '<span class="empty-state">No local text styles found.</span>';
+                lastTypoCSS = '';
+            }
+        }
+
+        function escapeHtml(str) {
+            return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+        }
+
+        // ── Event Listeners ───────────────────────────────────────────────
+        collectionSelect.addEventListener('change', () => {
+            populateModes();
+            render();
+        });
+        modeSelect.addEventListener('change', render);
+        document.querySelectorAll('input[name="wrapper"]').forEach((r) => r.addEventListener('change', render));
+        prependCheck.addEventListener('change', render);
+
+        function populateCollections() {
+            collectionSelect.innerHTML = '';
+            if (!pluginData || pluginData.collections.length === 0) {
+                collectionSelect.innerHTML = '<option value="">No collections found</option>';
+                return;
+            }
+            for (const c of pluginData.collections) {
+                const opt = document.createElement('option');
+                opt.value = c.id;
+                opt.textContent = c.name;
+                collectionSelect.appendChild(opt);
+            }
+        }
+
+        function populateModes() {
+            modeSelect.innerHTML = '';
+            const col = getSelectedCollection();
+            if (!col) {
+                modeSelect.innerHTML = '<option value="">\u2014</option>';
+                return;
+            }
+            for (const m of col.modes) {
+                const opt = document.createElement('option');
+                opt.value = m.modeId;
+                opt.textContent = m.name;
+                modeSelect.appendChild(opt);
+            }
+        }
+
+        // ── Copy Buttons ──────────────────────────────────────────────────
+        function copyWithFeedback(btn, text) {
+            if (!text) return;
+            navigator.clipboard.writeText(text).then(() => {
+                const orig = btn.textContent;
+                btn.textContent = 'Copied!';
+                btn.classList.add('copied');
+                setTimeout(() => {
+                    btn.textContent = orig;
+                    btn.classList.remove('copied');
+                }, 1500);
+            });
+        }
+
+        btnCopyVars.addEventListener('click', () => copyWithFeedback(btnCopyVars, lastVarCSS));
+        btnCopyTypo.addEventListener('click', () => copyWithFeedback(btnCopyTypo, lastTypoCSS));
+
+        // ── Message Handler ───────────────────────────────────────────────
+        window.onmessage = (event) => {
+            const msg = event.data.pluginMessage;
+            if (!msg) return;
+
+            if (msg.type === 'plugin-data') {
+                pluginData = msg;
+                populateCollections();
+                populateModes();
+                render();
+            }
+        };
+    </script>
+</body>
+
+</html>
