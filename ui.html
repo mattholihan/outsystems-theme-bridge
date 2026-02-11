@@ -46,6 +46,48 @@
             margin-top: 2px;
         }
 
+        /* ── Tabs ────────────────────────────────────────────────────── */
+        .tab-bar {
+            display: flex;
+            border-bottom: 1px solid var(--figma-color-border);
+            gap: 0;
+        }
+
+        .tab-btn {
+            flex: 1;
+            padding: 8px 0;
+            font-size: 11px;
+            font-weight: 500;
+            font-family: Inter, sans-serif;
+            color: var(--figma-color-text-secondary);
+            background: none;
+            border: none;
+            border-bottom: 2px solid transparent;
+            cursor: pointer;
+            transition: color 0.15s, border-color 0.15s;
+            text-align: center;
+        }
+
+        .tab-btn:hover {
+            color: var(--figma-color-text);
+        }
+
+        .tab-btn.active {
+            color: var(--figma-color-text-emphasis);
+            border-bottom-color: var(--figma-color-bg-brand);
+            font-weight: 600;
+        }
+
+        .tab-panel {
+            display: none;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .tab-panel.active {
+            display: flex;
+        }
+
         /* ── Form Controls ───────────────────────────────────────────── */
         label {
             display: block;
@@ -55,7 +97,10 @@
             margin-bottom: 4px;
         }
 
-        select {
+        select,
+        input[type="url"],
+        input[type="password"],
+        input[type="text"] {
             width: 100%;
             padding: 6px 8px;
             font-size: 11px;
@@ -65,6 +110,9 @@
             border: 1px solid var(--figma-color-border);
             border-radius: 6px;
             outline: none;
+        }
+
+        select {
             cursor: pointer;
             appearance: none;
             background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%23999' stroke-width='1.5' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
@@ -72,7 +120,10 @@
             background-position: right 8px center;
         }
 
-        select:focus {
+        select:focus,
+        input[type="url"]:focus,
+        input[type="password"]:focus,
+        input[type="text"]:focus {
             border-color: var(--figma-color-bg-brand);
         }
 
@@ -83,6 +134,11 @@
 
         .row .field {
             flex: 1;
+        }
+
+        .field {
+            display: flex;
+            flex-direction: column;
         }
 
         /* ── Options ─────────────────────────────────────────────────── */
@@ -181,6 +237,7 @@
             gap: 8px;
         }
 
+        .btn-primary,
         .btn-copy {
             flex: 1;
             padding: 8px 0;
@@ -192,19 +249,50 @@
             border: none;
             border-radius: 6px;
             cursor: pointer;
-            transition: opacity 0.15s;
+            transition: opacity 0.15s, background 0.2s;
         }
 
+        .btn-primary:hover,
         .btn-copy:hover {
             opacity: 0.9;
         }
 
+        .btn-primary:active,
         .btn-copy:active {
             opacity: 0.8;
         }
 
-        .btn-copy.copied {
+        .btn-copy.copied,
+        .btn-primary.success {
             background: #1bc47d;
+        }
+
+        .btn-primary.error {
+            background: #f24822;
+        }
+
+        .btn-primary:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        /* ── Settings ────────────────────────────────────────────────── */
+        .settings-section {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .settings-section .hint {
+            font-size: 10px;
+            color: var(--figma-color-text-secondary);
+            margin-top: 2px;
+        }
+
+        .settings-divider {
+            border: none;
+            border-top: 1px solid var(--figma-color-border);
+            margin: 4px 0;
         }
     </style>
 </head>
@@ -218,59 +306,111 @@
             <p>Export Figma variables &amp; text styles as OutSystems CSS custom properties.</p>
         </div>
 
-        <!-- Selectors Row -->
-        <div class="row">
-            <div class="field">
-                <label for="collectionSelect">Collection</label>
-                <select id="collectionSelect">
-                    <option value="">Loading…</option>
-                </select>
+        <!-- Tab Bar -->
+        <div class="tab-bar">
+            <button class="tab-btn active" data-tab="export">Export</button>
+            <button class="tab-btn" data-tab="settings">Settings</button>
+        </div>
+
+        <!-- ═══ Export Tab ═══ -->
+        <div class="tab-panel active" id="tab-export">
+            <!-- Selectors Row -->
+            <div class="row">
+                <div class="field">
+                    <label for="collectionSelect">Collection</label>
+                    <select id="collectionSelect">
+                        <option value="">Loading…</option>
+                    </select>
+                </div>
+                <div class="field">
+                    <label for="modeSelect">Mode</label>
+                    <select id="modeSelect">
+                        <option value="">—</option>
+                    </select>
+                </div>
             </div>
-            <div class="field">
-                <label for="modeSelect">Mode</label>
-                <select id="modeSelect">
-                    <option value="">—</option>
-                </select>
+
+            <!-- Options -->
+            <div class="options-bar">
+                <div class="option-group">
+                    <span>Wrapper</span>
+                    <label class="radio-label"><input type="radio" name="wrapper" value=":root" checked> :root</label>
+                    <label class="radio-label"><input type="radio" name="wrapper" value=".theme-custom">
+                        .theme-custom</label>
+                </div>
+                <div class="option-group">
+                    <label class="check-label"><input type="checkbox" id="prependCheck" checked> Add comment
+                        header</label>
+                </div>
+            </div>
+
+            <!-- Variables Preview -->
+            <div class="section-label">Variables</div>
+            <div class="code-wrap">
+                <div class="code-block" id="variablesPreview">
+                    <span class="empty-state">Select a collection to preview CSS.</span>
+                </div>
+            </div>
+
+            <!-- Typography Preview -->
+            <div class="section-label">Typography</div>
+            <div class="code-wrap">
+                <div class="code-block" id="typographyPreview">
+                    <span class="empty-state">Text styles will appear here.</span>
+                </div>
+            </div>
+
+            <!-- Actions -->
+            <div class="action-bar">
+                <button class="btn-copy" id="btnCopyVars">Copy Variables CSS</button>
+                <button class="btn-copy" id="btnCopyTypo">Copy Typography CSS</button>
+            </div>
+            <div class="action-bar">
+                <button class="btn-primary" id="btnSync">Sync to OutSystems</button>
             </div>
         </div>
 
-        <!-- Options -->
-        <div class="options-bar">
-            <div class="option-group">
-                <span>Wrapper</span>
-                <label class="radio-label"><input type="radio" name="wrapper" value=":root" checked> :root</label>
-                <label class="radio-label"><input type="radio" name="wrapper" value=".theme-custom">
-                    .theme-custom</label>
-            </div>
-            <div class="option-group">
-                <label class="check-label"><input type="checkbox" id="prependCheck" checked> Add comment header</label>
-            </div>
-        </div>
+        <!-- ═══ Settings Tab ═══ -->
+        <div class="tab-panel" id="tab-settings">
+            <div class="settings-section">
+                <div class="section-label">API Configuration</div>
+                <p class="hint">Configure the REST endpoint to sync tokens directly to OutSystems.</p>
 
-        <!-- Variables Preview -->
-        <div class="section-label">Variables</div>
-        <div class="code-wrap">
-            <div class="code-block" id="variablesPreview">
-                <span class="empty-state">Select a collection to preview CSS.</span>
-            </div>
-        </div>
+                <hr class="settings-divider">
 
-        <!-- Typography Preview -->
-        <div class="section-label">Typography</div>
-        <div class="code-wrap">
-            <div class="code-block" id="typographyPreview">
-                <span class="empty-state">Text styles will appear here.</span>
-            </div>
-        </div>
+                <div class="field">
+                    <label for="apiEndpoint">API Endpoint</label>
+                    <input type="url" id="apiEndpoint"
+                        placeholder="https://your-env.outsystemscloud.com/YourModule/rest/ThemeAPI/ImportTokens">
+                    <span class="hint">Full URL of the OutSystems REST endpoint.</span>
+                </div>
 
-        <!-- Actions -->
-        <div class="action-bar">
-            <button class="btn-copy" id="btnCopyVars">Copy Variables CSS</button>
-            <button class="btn-copy" id="btnCopyTypo">Copy Typography CSS</button>
+                <div class="field">
+                    <label for="apiKey">API Key</label>
+                    <input type="password" id="apiKey" placeholder="Your API key">
+                    <span class="hint">Sent as a Bearer token in the Authorization header.</span>
+                </div>
+
+                <hr class="settings-divider">
+
+                <div class="action-bar">
+                    <button class="btn-primary" id="btnSaveSettings">Save Settings</button>
+                </div>
+            </div>
         </div>
     </div>
 
     <script>
+        // ── Tab Switching ─────────────────────────────────────────────────
+        document.querySelectorAll('.tab-btn').forEach((btn) => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.tab-btn').forEach((b) => b.classList.remove('active'));
+                document.querySelectorAll('.tab-panel').forEach((p) => p.classList.remove('active'));
+                btn.classList.add('active');
+                document.getElementById('tab-' + btn.dataset.tab).classList.add('active');
+            });
+        });
+
         // ── Formatter functions (inlined from formatters.ts) ──────────────
 
         function toOsVarName(figmaName) {
@@ -319,7 +459,11 @@
         const typographyPreview = document.getElementById('typographyPreview');
         const btnCopyVars = document.getElementById('btnCopyVars');
         const btnCopyTypo = document.getElementById('btnCopyTypo');
+        const btnSync = document.getElementById('btnSync');
         const prependCheck = document.getElementById('prependCheck');
+        const apiEndpoint = document.getElementById('apiEndpoint');
+        const apiKeyInput = document.getElementById('apiKey');
+        const btnSaveSettings = document.getElementById('btnSaveSettings');
 
         function getOptions() {
             const wrapper = document.querySelector('input[name="wrapper"]:checked').value;
@@ -456,6 +600,54 @@
             return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
         }
 
+        // ── Build Sync Payload ────────────────────────────────────────────
+        function buildSyncPayload() {
+            const col = getSelectedCollection();
+            const mode = getSelectedMode();
+            if (!col || !mode) return null;
+
+            const tokens = [];
+            for (const v of col.variables) {
+                const value = v.valuesByMode[mode.modeId];
+                if (value === undefined || value === null) continue;
+
+                let formattedValue;
+                if (v.resolvedType === 'COLOR' && typeof value === 'object' && 'r' in value) {
+                    formattedValue = formatColor(value);
+                } else if (v.resolvedType === 'FLOAT') {
+                    formattedValue = String(value);
+                } else {
+                    continue;
+                }
+
+                tokens.push({
+                    name: toOsVarName(v.name),
+                    value: formattedValue,
+                });
+            }
+
+            // Include typography tokens
+            if (pluginData && pluginData.textStyles) {
+                for (const s of pluginData.textStyles) {
+                    const base = toOsVarName('font/' + s.name);
+                    const weight = fontStyleToWeight(s.fontStyle);
+                    let lhValue = typeof s.lineHeight === 'number' ? s.lineHeight + 'px'
+                        : (s.lineHeight === 'normal' || s.lineHeight === 'AUTO') ? 'normal'
+                            : s.lineHeight;
+
+                    tokens.push({ name: base + '-family', value: s.fontFamily });
+                    tokens.push({ name: base + '-weight', value: String(weight) });
+                    tokens.push({ name: base + '-size', value: s.fontSize + 'px' });
+                    tokens.push({ name: base + '-line-height', value: String(lhValue) });
+                }
+            }
+
+            return {
+                themeName: col.name + '_' + mode.name,
+                tokens,
+            };
+        }
+
         // ── Event Listeners ───────────────────────────────────────────────
         collectionSelect.addEventListener('change', () => {
             populateModes();
@@ -511,6 +703,33 @@
         btnCopyVars.addEventListener('click', () => copyWithFeedback(btnCopyVars, lastVarCSS));
         btnCopyTypo.addEventListener('click', () => copyWithFeedback(btnCopyTypo, lastTypoCSS));
 
+        // ── Sync Button ───────────────────────────────────────────────────
+        btnSync.addEventListener('click', () => {
+            const payload = buildSyncPayload();
+            if (!payload) return;
+
+            btnSync.disabled = true;
+            btnSync.textContent = 'Syncing\u2026';
+
+            parent.postMessage({
+                pluginMessage: {
+                    type: 'sync-to-outsystems',
+                    payload,
+                }
+            }, '*');
+        });
+
+        // ── Save Settings ─────────────────────────────────────────────────
+        btnSaveSettings.addEventListener('click', () => {
+            parent.postMessage({
+                pluginMessage: {
+                    type: 'save-settings',
+                    endpoint: apiEndpoint.value.trim(),
+                    apiKey: apiKeyInput.value.trim(),
+                }
+            }, '*');
+        });
+
         // ── Message Handler ───────────────────────────────────────────────
         window.onmessage = (event) => {
             const msg = event.data.pluginMessage;
@@ -522,7 +741,30 @@
                 populateModes();
                 render();
             }
+
+            if (msg.type === 'settings-loaded') {
+                apiEndpoint.value = msg.endpoint || '';
+                apiKeyInput.value = msg.apiKey || '';
+            }
+
+            if (msg.type === 'sync-result') {
+                if (msg.success) {
+                    btnSync.textContent = 'Synced \u2713';
+                    btnSync.classList.add('success');
+                } else {
+                    btnSync.textContent = 'Sync Failed';
+                    btnSync.classList.add('error');
+                }
+                setTimeout(() => {
+                    btnSync.textContent = 'Sync to OutSystems';
+                    btnSync.disabled = false;
+                    btnSync.classList.remove('success', 'error');
+                }, 2000);
+            }
         };
+
+        // ── Load saved settings on init ───────────────────────────────────
+        parent.postMessage({ pluginMessage: { type: 'load-settings' } }, '*');
     </script>
 </body>
 

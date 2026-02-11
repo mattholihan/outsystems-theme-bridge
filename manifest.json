@@ -9,5 +9,11 @@
     "editorType": [
         "figma"
     ],
+    "networkAccess": {
+        "allowedDomains": [
+            "*"
+        ],
+        "reasoning": "Syncs design tokens to a user-configured OutSystems REST API endpoint."
+    },
     "permissions": []
 }

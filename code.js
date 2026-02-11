@@ -90,3 +90,49 @@ async function gatherData() {
     });
 }
 gatherData();
+// ── Message Handler ──────────────────────────────────────────────
+figma.ui.onmessage = async (msg) => {
+    if (msg.type === 'load-settings') {
+        const endpoint = await figma.clientStorage.getAsync('os-api-endpoint') || '';
+        const apiKey = await figma.clientStorage.getAsync('os-api-key') || '';
+        figma.ui.postMessage({
+            type: 'settings-loaded',
+            endpoint,
+            apiKey,
+        });
+    }
+    if (msg.type === 'save-settings') {
+        await figma.clientStorage.setAsync('os-api-endpoint', msg.endpoint || '');
+        await figma.clientStorage.setAsync('os-api-key', msg.apiKey || '');
+        figma.notify('✓ Settings saved');
+    }
+    if (msg.type === 'sync-to-outsystems') {
+        const endpoint = await figma.clientStorage.getAsync('os-api-endpoint');
+        const apiKey = await figma.clientStorage.getAsync('os-api-key');
+        if (!endpoint) {
+            figma.notify('✗ No API endpoint configured. Go to Settings.', { error: true });
+            figma.ui.postMessage({ type: 'sync-result', success: false, error: 'No endpoint' });
+            return;
+        }
+        try {
+            const res = await fetch(endpoint, {
+                method: 'POST',
+                headers: Object.assign({ 'Content-Type': 'application/json' }, (apiKey ? { 'Authorization': `Bearer ${apiKey}` } : {})),
+                body: JSON.stringify(msg.payload),
+            });
+            if (res.ok) {
+                figma.notify('✓ Synced successfully');
+                figma.ui.postMessage({ type: 'sync-result', success: true });
+            }
+            else {
+                const errorText = await res.text();
+                figma.notify(`✗ Sync failed: ${res.status} ${res.statusText}`, { error: true });
+                figma.ui.postMessage({ type: 'sync-result', success: false, error: `${res.status}: ${errorText}` });
+            }
+        }
+        catch (err) {
+            figma.notify(`✗ Sync failed: ${err.message || 'Network error'}`, { error: true });
+            figma.ui.postMessage({ type: 'sync-result', success: false, error: err.message || 'Network error' });
+        }
+    }
+};
