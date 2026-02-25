@@ -1,6 +1,6 @@
 {
     "name": "OutSystems Theme Bridge",
-    "id": "YOUR_ID_HERE",
+    "id": "12345",
     "api": "1.0.0",
     "main": "code.js",
     "ui": "ui.html",
@@ -11,9 +11,11 @@
     ],
     "networkAccess": {
         "allowedDomains": [
-            "*"
-        ],
-        "reasoning": "Syncs design tokens to a user-configured OutSystems REST API endpoint."
+            "https://*.outsystemscloud.com",
+            "https://*.outsystemsenterprise.com",
+            "https://*.outsystems.app",
+            "https://*.outsystems.dev"
+        ]
     },
     "permissions": []
 }
