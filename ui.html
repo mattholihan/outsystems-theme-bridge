@@ -498,8 +498,16 @@
         // ── Formatter functions (inlined from formatters.ts) ──────────────
 
         function toOsVarName(figmaName) {
-            return '--os-' + figmaName
-                .replace(/\//g, '-')
+            const leaf = figmaName.split('/').pop() || figmaName;
+            return '--' + leaf
+                .replace(/\s+/g, '-')
+                .replace(/[^a-zA-Z0-9-]/g, '')
+                .toLowerCase();
+        }
+
+        function toSlug(figmaName) {
+            const leaf = figmaName.split('/').pop() || figmaName;
+            return leaf
                 .replace(/\s+/g, '-')
                 .replace(/[^a-zA-Z0-9-]/g, '')
                 .toLowerCase();
@@ -625,7 +633,7 @@
 
             for (let i = 0; i < textStyles.length; i++) {
                 const s = textStyles[i];
-                const base = toOsVarName('font/' + s.name);
+                const base = toOsVarName(s.name);
                 const weight = fontStyleToWeight(s.fontStyle);
                 let lhValue = typeof s.lineHeight === 'number' ? s.lineHeight + 'px'
                     : (s.lineHeight === 'normal' || s.lineHeight === 'AUTO') ? 'normal'
@@ -645,7 +653,7 @@
         function highlightCSS(css) {
             return css
                 .replace(/\/\*.*?\*\//g, (m) => '<span class="comment">' + m + '</span>')
-                .replace(/(--os-[a-z0-9-]+)/g, '<span class="prop">$1</span>')
+                .replace(/(--[a-z0-9-]+)/g, '<span class="prop">$1</span>')
                 .replace(/:\s*([^;]+);/g, (m, val) => ': <span class="value">' + val + '</span>;');
         }
 
@@ -709,7 +717,7 @@
                 }
 
                 tokens.push({
-                    Name: toOsVarName(v.name),
+                    Name: toSlug(v.name),
                     Value: formattedValue,
                 });
             }
@@ -717,7 +725,7 @@
             // Include typography tokens
             if (pluginData && pluginData.textStyles) {
                 for (const s of pluginData.textStyles) {
-                    const base = toOsVarName('font/' + s.name);
+                    const base = toSlug(s.name);
                     const weight = fontStyleToWeight(s.fontStyle);
                     let lhValue = typeof s.lineHeight === 'number' ? s.lineHeight + 'px'
                         : (s.lineHeight === 'normal' || s.lineHeight === 'AUTO') ? 'normal'
