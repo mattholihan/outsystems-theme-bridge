@@ -294,6 +294,76 @@
             border-top: 1px solid var(--figma-color-border);
             margin: 4px 0;
         }
+
+        .url-preview {
+            font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', 'Consolas', monospace;
+            font-size: 10px;
+            color: var(--figma-color-text-secondary);
+            background: var(--figma-color-bg-secondary);
+            border: 1px solid var(--figma-color-border);
+            border-radius: 6px;
+            padding: 6px 8px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            word-break: break-all;
+        }
+
+        .url-preview.has-value {
+            color: var(--figma-color-text);
+        }
+
+        .btn-secondary {
+            flex: 1;
+            padding: 8px 0;
+            font-size: 11px;
+            font-weight: 600;
+            font-family: Inter, sans-serif;
+            color: var(--figma-color-text);
+            background: none;
+            border: 1px solid var(--figma-color-border);
+            border-radius: 6px;
+            cursor: pointer;
+            transition: background 0.15s, border-color 0.15s;
+        }
+
+        .btn-secondary:hover {
+            background: var(--figma-color-bg-secondary);
+            border-color: var(--figma-color-text-secondary);
+        }
+
+        .btn-secondary:active {
+            opacity: 0.8;
+        }
+
+        .btn-secondary:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .btn-secondary.success {
+            color: #1bc47d;
+            border-color: #1bc47d;
+        }
+
+        .btn-secondary.error {
+            color: #f24822;
+            border-color: #f24822;
+        }
+
+        .status-msg {
+            font-size: 10px;
+            margin-top: 4px;
+            min-height: 14px;
+        }
+
+        .status-msg.success {
+            color: #1bc47d;
+        }
+
+        .status-msg.error {
+            color: #f24822;
+        }
     </style>
 </head>
 
@@ -379,11 +449,23 @@
                 <hr class="settings-divider">
 
                 <div class="field">
-                    <label for="apiEndpoint">API Endpoint</label>
-                    <input type="url" id="apiEndpoint"
-                        placeholder="https://your-env.outsystemscloud.com/YourModule/rest/ThemeAPI/ImportTokens">
-                    <span class="hint">Full URL of the OutSystems REST endpoint.</span>
+                    <label for="baseUrl">Environment URL</label>
+                    <input type="url" id="baseUrl" placeholder="https://your-env.outsystemscloud.com">
+                    <span class="hint">Base URL of your OutSystems environment.</span>
                 </div>
+
+                <div class="field">
+                    <label for="apiPath">API Endpoint Path</label>
+                    <input type="text" id="apiPath" placeholder="/YourModule/rest/ThemeAPI/ImportTokens">
+                    <span class="hint">Path appended to the environment URL.</span>
+                </div>
+
+                <div class="field">
+                    <label>Full URL Preview</label>
+                    <div class="url-preview" id="urlPreview">Enter an environment URL above</div>
+                </div>
+
+                <hr class="settings-divider">
 
                 <div class="field">
                     <label for="apiKey">API Key</label>
@@ -394,8 +476,10 @@
                 <hr class="settings-divider">
 
                 <div class="action-bar">
+                    <button class="btn-secondary" id="btnTestConnection">Test Connection</button>
                     <button class="btn-primary" id="btnSaveSettings">Save Settings</button>
                 </div>
+                <div class="status-msg" id="settingsStatus"></div>
             </div>
         </div>
     </div>
@@ -461,9 +545,13 @@
         const btnCopyTypo = document.getElementById('btnCopyTypo');
         const btnSync = document.getElementById('btnSync');
         const prependCheck = document.getElementById('prependCheck');
-        const apiEndpoint = document.getElementById('apiEndpoint');
+        const baseUrlInput = document.getElementById('baseUrl');
+        const apiPathInput = document.getElementById('apiPath');
+        const urlPreview = document.getElementById('urlPreview');
         const apiKeyInput = document.getElementById('apiKey');
+        const btnTestConnection = document.getElementById('btnTestConnection');
         const btnSaveSettings = document.getElementById('btnSaveSettings');
+        const settingsStatus = document.getElementById('settingsStatus');
 
         function getOptions() {
             const wrapper = document.querySelector('input[name="wrapper"]:checked').value;
@@ -621,8 +709,8 @@
                 }
 
                 tokens.push({
-                    name: toOsVarName(v.name),
-                    value: formattedValue,
+                    Name: toOsVarName(v.name),
+                    Value: formattedValue,
                 });
             }
 
@@ -635,16 +723,16 @@
                         : (s.lineHeight === 'normal' || s.lineHeight === 'AUTO') ? 'normal'
                             : s.lineHeight;
 
-                    tokens.push({ name: base + '-family', value: s.fontFamily });
-                    tokens.push({ name: base + '-weight', value: String(weight) });
-                    tokens.push({ name: base + '-size', value: s.fontSize + 'px' });
-                    tokens.push({ name: base + '-line-height', value: String(lhValue) });
+                    tokens.push({ Name: base + '-family', Value: s.fontFamily });
+                    tokens.push({ Name: base + '-weight', Value: String(weight) });
+                    tokens.push({ Name: base + '-size', Value: s.fontSize + 'px' });
+                    tokens.push({ Name: base + '-line-height', Value: String(lhValue) });
                 }
             }
 
             return {
-                themeName: col.name + '_' + mode.name,
-                tokens,
+                ThemeName: col.name + '_' + mode.name,
+                Tokens: tokens,
             };
         }
 
@@ -719,12 +807,78 @@
             }, '*');
         });
 
+        // ── URL Preview ───────────────────────────────────────────────────
+        function getFullUrl() {
+            const base = baseUrlInput.value.trim().replace(/\/+$/, '');
+            let path = apiPathInput.value.trim();
+            if (path && !path.startsWith('/')) path = '/' + path;
+            return base + path;
+        }
+
+        function updateUrlPreview() {
+            const full = getFullUrl();
+            if (full) {
+                urlPreview.textContent = full;
+                urlPreview.classList.add('has-value');
+            } else {
+                urlPreview.textContent = 'Enter an environment URL above';
+                urlPreview.classList.remove('has-value');
+            }
+        }
+
+        baseUrlInput.addEventListener('input', updateUrlPreview);
+        apiPathInput.addEventListener('input', updateUrlPreview);
+
+        // ── Status Helper ─────────────────────────────────────────────────
+        function showStatus(text, type) {
+            settingsStatus.textContent = text;
+            settingsStatus.className = 'status-msg ' + (type || '');
+        }
+
+        function clearStatus() {
+            settingsStatus.textContent = '';
+            settingsStatus.className = 'status-msg';
+        }
+
+        // ── Test Connection ───────────────────────────────────────────────
+        btnTestConnection.addEventListener('click', () => {
+            clearStatus();
+            const fullUrl = getFullUrl();
+
+            // Client-side validation
+            if (!fullUrl || !fullUrl.startsWith('https://')) {
+                showStatus('URL must start with https://', 'error');
+                btnTestConnection.classList.add('error');
+                setTimeout(() => btnTestConnection.classList.remove('error'), 2000);
+                return;
+            }
+
+            try { new URL(fullUrl); } catch {
+                showStatus('Invalid URL format', 'error');
+                btnTestConnection.classList.add('error');
+                setTimeout(() => btnTestConnection.classList.remove('error'), 2000);
+                return;
+            }
+
+            btnTestConnection.disabled = true;
+            btnTestConnection.textContent = 'Testing\u2026';
+
+            parent.postMessage({
+                pluginMessage: {
+                    type: 'test-connection',
+                    fullUrl,
+                }
+            }, '*');
+        });
+
         // ── Save Settings ─────────────────────────────────────────────────
         btnSaveSettings.addEventListener('click', () => {
+            clearStatus();
             parent.postMessage({
                 pluginMessage: {
                     type: 'save-settings',
-                    endpoint: apiEndpoint.value.trim(),
+                    baseUrl: baseUrlInput.value.trim(),
+                    apiPath: apiPathInput.value.trim(),
                     apiKey: apiKeyInput.value.trim(),
                 }
             }, '*');
@@ -743,8 +897,37 @@
             }
 
             if (msg.type === 'settings-loaded') {
-                apiEndpoint.value = msg.endpoint || '';
+                baseUrlInput.value = msg.baseUrl || '';
+                apiPathInput.value = msg.apiPath || '';
                 apiKeyInput.value = msg.apiKey || '';
+                updateUrlPreview();
+            }
+
+            if (msg.type === 'settings-saved') {
+                showStatus('\u2713 Settings saved', 'success');
+                btnSaveSettings.textContent = 'Saved \u2713';
+                btnSaveSettings.classList.add('success');
+                setTimeout(() => {
+                    btnSaveSettings.textContent = 'Save Settings';
+                    btnSaveSettings.classList.remove('success');
+                }, 2000);
+            }
+
+            if (msg.type === 'test-result') {
+                btnTestConnection.disabled = false;
+                if (msg.success) {
+                    btnTestConnection.textContent = 'Reachable \u2713';
+                    btnTestConnection.classList.add('success');
+                    showStatus('Server responded with ' + msg.statusCode, 'success');
+                } else {
+                    btnTestConnection.textContent = 'Failed';
+                    btnTestConnection.classList.add('error');
+                    showStatus(msg.error || 'Connection failed (status ' + msg.statusCode + ')', 'error');
+                }
+                setTimeout(() => {
+                    btnTestConnection.textContent = 'Test Connection';
+                    btnTestConnection.classList.remove('success', 'error');
+                }, 2500);
             }
 
             if (msg.type === 'sync-result') {

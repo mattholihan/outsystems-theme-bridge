@@ -93,32 +93,86 @@ gatherData();
 // ── Message Handler ──────────────────────────────────────────────
 figma.ui.onmessage = async (msg) => {
     if (msg.type === 'load-settings') {
-        const endpoint = await figma.clientStorage.getAsync('os-api-endpoint') || '';
+        let baseUrl = await figma.clientStorage.getAsync('os-base-url') || '';
+        let apiPath = await figma.clientStorage.getAsync('os-api-path') || '';
         const apiKey = await figma.clientStorage.getAsync('os-api-key') || '';
+        // One-time migration from legacy single-endpoint key
+        if (!baseUrl && !apiPath) {
+            const legacy = await figma.clientStorage.getAsync('os-api-endpoint');
+            if (legacy && typeof legacy === 'string') {
+                try {
+                    const url = new URL(legacy);
+                    baseUrl = url.origin;
+                    apiPath = url.pathname + url.search;
+                    await figma.clientStorage.setAsync('os-base-url', baseUrl);
+                    await figma.clientStorage.setAsync('os-api-path', apiPath);
+                    await figma.clientStorage.deleteAsync('os-api-endpoint');
+                }
+                catch (_a) {
+                    // Legacy value wasn't a valid URL — leave fields empty
+                }
+            }
+        }
         figma.ui.postMessage({
             type: 'settings-loaded',
-            endpoint,
+            baseUrl,
+            apiPath,
             apiKey,
         });
     }
     if (msg.type === 'save-settings') {
-        await figma.clientStorage.setAsync('os-api-endpoint', msg.endpoint || '');
+        await figma.clientStorage.setAsync('os-base-url', msg.baseUrl || '');
+        await figma.clientStorage.setAsync('os-api-path', msg.apiPath || '');
         await figma.clientStorage.setAsync('os-api-key', msg.apiKey || '');
         figma.notify('✓ Settings saved');
+        figma.ui.postMessage({ type: 'settings-saved' });
+    }
+    if (msg.type === 'test-connection') {
+        const fullUrl = msg.fullUrl;
+        const apiKey = await figma.clientStorage.getAsync('os-api-key') || '';
+        try {
+            const res = await fetch(fullUrl, {
+                method: 'POST',
+                headers: Object.assign({ 'Content-Type': 'application/json' }, (apiKey ? { 'Authorization': `Bearer ${apiKey}` } : {})),
+                body: JSON.stringify({}),
+            });
+            figma.ui.postMessage({
+                type: 'test-result',
+                success: res.ok,
+                statusCode: res.status,
+            });
+        }
+        catch (err) {
+            figma.ui.postMessage({
+                type: 'test-result',
+                success: false,
+                error: err.message || 'Network error',
+            });
+        }
     }
     if (msg.type === 'sync-to-outsystems') {
-        const endpoint = await figma.clientStorage.getAsync('os-api-endpoint');
-        const apiKey = await figma.clientStorage.getAsync('os-api-key');
+        const baseUrl = await figma.clientStorage.getAsync('os-base-url') || '';
+        const apiPath = await figma.clientStorage.getAsync('os-api-path') || '';
+        const apiKey = await figma.clientStorage.getAsync('os-api-key') || '';
+        const endpoint = baseUrl + apiPath;
         if (!endpoint) {
             figma.notify('✗ No API endpoint configured. Go to Settings.', { error: true });
             figma.ui.postMessage({ type: 'sync-result', success: false, error: 'No endpoint' });
             return;
         }
+        // Map to ODC's expected schema — raw array, no wrapper object
+        const rawTokens = msg.payload.Tokens || msg.payload.tokens || [];
+        const mappedPayload = rawTokens.map((t) => ({
+            Name: t.Name || t.name,
+            Value: t.Value || t.value,
+            Type: 'Variable',
+        }));
+        console.log("PAYLOAD LEAVING FIGMA:", JSON.stringify(mappedPayload, null, 2));
         try {
             const res = await fetch(endpoint, {
                 method: 'POST',
                 headers: Object.assign({ 'Content-Type': 'application/json' }, (apiKey ? { 'Authorization': `Bearer ${apiKey}` } : {})),
-                body: JSON.stringify(msg.payload),
+                body: JSON.stringify(mappedPayload),
             });
             if (res.ok) {
                 figma.notify('✓ Synced successfully');
@@ -126,6 +180,7 @@ figma.ui.onmessage = async (msg) => {
             }
             else {
                 const errorText = await res.text();
+                console.error("OUTSYSTEMS COMPLAINT:", errorText);
                 figma.notify(`✗ Sync failed: ${res.status} ${res.statusText}`, { error: true });
                 figma.ui.postMessage({ type: 'sync-result', success: false, error: `${res.status}: ${errorText}` });
             }
