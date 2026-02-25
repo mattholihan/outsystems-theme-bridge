@@ -499,7 +499,8 @@
 
         function toOsVarName(figmaName) {
             const leaf = figmaName.split('/').pop() || figmaName;
-            return '--' + leaf
+            const clean = leaf.replace(/^-+/, '');
+            return '--' + clean
                 .replace(/\s+/g, '-')
                 .replace(/[^a-zA-Z0-9-]/g, '')
                 .toLowerCase();
