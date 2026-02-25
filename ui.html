@@ -373,7 +373,7 @@
         <!-- Header -->
         <div class="header">
             <h1>OutSystems Theme Bridge</h1>
-            <p>Export Figma variables &amp; text styles as OutSystems CSS custom properties.</p>
+            <p>Export Figma variables as OutSystems CSS custom properties.</p>
         </div>
 
         <!-- Tab Bar -->
@@ -421,19 +421,9 @@
                     <span class="empty-state">Select a collection to preview CSS.</span>
                 </div>
             </div>
-
-            <!-- Typography Preview -->
-            <div class="section-label">Typography</div>
-            <div class="code-wrap">
-                <div class="code-block" id="typographyPreview">
-                    <span class="empty-state">Text styles will appear here.</span>
-                </div>
-            </div>
-
             <!-- Actions -->
             <div class="action-bar">
                 <button class="btn-copy" id="btnCopyVars">Copy Variables CSS</button>
-                <button class="btn-copy" id="btnCopyTypo">Copy Typography CSS</button>
             </div>
             <div class="action-bar">
                 <button class="btn-primary" id="btnSync">Sync to OutSystems</button>
@@ -530,18 +520,6 @@
             return 'rgba(' + clamp(color.r) + ', ' + clamp(color.g) + ', ' + clamp(color.b) + ', ' + parseFloat(color.a.toFixed(2)) + ')';
         }
 
-        function fontStyleToWeight(style) {
-            const s = style.toLowerCase();
-            if (s.includes('thin') || s.includes('hairline')) return 100;
-            if (s.includes('extralight') || s.includes('ultra light')) return 200;
-            if (s.includes('light')) return 300;
-            if (s.includes('medium')) return 500;
-            if (s.includes('semibold') || s.includes('semi bold') || s.includes('demi bold')) return 600;
-            if (s.includes('extrabold') || s.includes('ultra bold') || s.includes('extra bold')) return 800;
-            if (s.includes('bold')) return 700;
-            if (s.includes('black') || s.includes('heavy')) return 900;
-            return 400;
-        }
 
         // ── State ─────────────────────────────────────────────────────────
         let pluginData = null;
@@ -549,9 +527,7 @@
         const collectionSelect = document.getElementById('collectionSelect');
         const modeSelect = document.getElementById('modeSelect');
         const variablesPreview = document.getElementById('variablesPreview');
-        const typographyPreview = document.getElementById('typographyPreview');
         const btnCopyVars = document.getElementById('btnCopyVars');
-        const btnCopyTypo = document.getElementById('btnCopyTypo');
         const btnSync = document.getElementById('btnSync');
         const prependCheck = document.getElementById('prependCheck');
         const baseUrlInput = document.getElementById('baseUrl');
@@ -623,33 +599,6 @@
             return lines.join('\n');
         }
 
-        function generateTypographyCSS(textStyles, options) {
-            if (textStyles.length === 0) return '';
-            const lines = [];
-            if (options.prependComment) {
-                lines.push('/* Generated from Figma Design System \u2014 Typography */');
-            }
-            lines.push(options.wrapper + ' {');
-            lines.push('  /* \u2500\u2500 Typography \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500 */');
-
-            for (let i = 0; i < textStyles.length; i++) {
-                const s = textStyles[i];
-                const base = toOsVarName(s.name);
-                const weight = fontStyleToWeight(s.fontStyle);
-                let lhValue = typeof s.lineHeight === 'number' ? s.lineHeight + 'px'
-                    : (s.lineHeight === 'normal' || s.lineHeight === 'AUTO') ? 'normal'
-                        : s.lineHeight;
-
-                lines.push('  ' + base + '-family: \'' + s.fontFamily + '\';');
-                lines.push('  ' + base + '-weight: ' + weight + ';');
-                lines.push('  ' + base + '-size: ' + s.fontSize + 'px;');
-                lines.push('  ' + base + '-line-height: ' + lhValue + ';');
-                if (i < textStyles.length - 1) lines.push('');
-            }
-            lines.push('}');
-            return lines.join('\n');
-        }
-
         // ── Syntax Highlighting (simple) ──────────────────────────────────
         function highlightCSS(css) {
             return css
@@ -660,7 +609,6 @@
 
         // ── Render ────────────────────────────────────────────────────────
         let lastVarCSS = '';
-        let lastTypoCSS = '';
 
         function render() {
             const col = getSelectedCollection();
@@ -681,15 +629,6 @@
             } else {
                 variablesPreview.innerHTML = '<span class="empty-state">No color or number variables in this collection.</span>';
                 lastVarCSS = '';
-            }
-
-            // Typography
-            if (pluginData.textStyles.length > 0) {
-                lastTypoCSS = generateTypographyCSS(pluginData.textStyles, options);
-                typographyPreview.innerHTML = highlightCSS(escapeHtml(lastTypoCSS));
-            } else {
-                typographyPreview.innerHTML = '<span class="empty-state">No local text styles found.</span>';
-                lastTypoCSS = '';
             }
         }
 
@@ -721,22 +660,6 @@
                     Name: toSlug(v.name),
                     Value: formattedValue,
                 });
-            }
-
-            // Include typography tokens
-            if (pluginData && pluginData.textStyles) {
-                for (const s of pluginData.textStyles) {
-                    const base = toSlug(s.name);
-                    const weight = fontStyleToWeight(s.fontStyle);
-                    let lhValue = typeof s.lineHeight === 'number' ? s.lineHeight + 'px'
-                        : (s.lineHeight === 'normal' || s.lineHeight === 'AUTO') ? 'normal'
-                            : s.lineHeight;
-
-                    tokens.push({ Name: base + '-family', Value: s.fontFamily });
-                    tokens.push({ Name: base + '-weight', Value: String(weight) });
-                    tokens.push({ Name: base + '-size', Value: s.fontSize + 'px' });
-                    tokens.push({ Name: base + '-line-height', Value: String(lhValue) });
-                }
             }
 
             return {
@@ -798,7 +721,6 @@
         }
 
         btnCopyVars.addEventListener('click', () => copyWithFeedback(btnCopyVars, lastVarCSS));
-        btnCopyTypo.addEventListener('click', () => copyWithFeedback(btnCopyTypo, lastTypoCSS));
 
         // ── Sync Button ───────────────────────────────────────────────────
         btnSync.addEventListener('click', () => {

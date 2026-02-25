@@ -58,35 +58,10 @@ async function gatherData() {
             variables,
         });
     }
-    // --- Text Styles ---
-    const textStyles = await figma.getLocalTextStylesAsync();
-    const textStylePayloads = textStyles.map((style) => {
-        let lh = 'AUTO';
-        if (style.lineHeight && typeof style.lineHeight === 'object') {
-            const lhObj = style.lineHeight;
-            if (lhObj.unit === 'PIXELS' && lhObj.value !== undefined) {
-                lh = lhObj.value;
-            }
-            else if (lhObj.unit === 'PERCENT' && lhObj.value !== undefined) {
-                lh = `${lhObj.value}%`;
-            }
-            else {
-                lh = 'normal';
-            }
-        }
-        return {
-            name: style.name,
-            fontFamily: style.fontName.family,
-            fontStyle: style.fontName.style,
-            fontSize: style.fontSize,
-            lineHeight: lh,
-        };
-    });
     // --- Send to UI ---
     figma.ui.postMessage({
         type: 'plugin-data',
         collections: collectionPayloads,
-        textStyles: textStylePayloads,
     });
 }
 gatherData();

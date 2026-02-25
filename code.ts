@@ -16,13 +16,6 @@ interface VariablePayload {
     valuesByMode: Record<string, any>;
 }
 
-interface TextStylePayload {
-    name: string;
-    fontFamily: string;
-    fontStyle: string;
-    fontSize: number;
-    lineHeight: string | number;
-}
 
 async function resolveVariableValue(
     value: any,
@@ -94,35 +87,10 @@ async function gatherData() {
         });
     }
 
-    // --- Text Styles ---
-    const textStyles = await figma.getLocalTextStylesAsync();
-    const textStylePayloads: TextStylePayload[] = textStyles.map((style) => {
-        let lh: string | number = 'AUTO';
-        if (style.lineHeight && typeof style.lineHeight === 'object') {
-            const lhObj = style.lineHeight as { unit: string; value?: number };
-            if (lhObj.unit === 'PIXELS' && lhObj.value !== undefined) {
-                lh = lhObj.value;
-            } else if (lhObj.unit === 'PERCENT' && lhObj.value !== undefined) {
-                lh = `${lhObj.value}%`;
-            } else {
-                lh = 'normal';
-            }
-        }
-
-        return {
-            name: style.name,
-            fontFamily: style.fontName.family,
-            fontStyle: style.fontName.style,
-            fontSize: style.fontSize as number,
-            lineHeight: lh,
-        };
-    });
-
     // --- Send to UI ---
     figma.ui.postMessage({
         type: 'plugin-data',
         collections: collectionPayloads,
-        textStyles: textStylePayloads,
     });
 }
 
